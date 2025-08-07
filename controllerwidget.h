@@ -24,7 +24,7 @@
 #include <QXmlStreamWriter>
 #include <QXmlStreamReader>
 #include <QFormLayout>
-
+#include <QCheckBox>
 
 /**
  * @enum BlockStatus
@@ -55,6 +55,12 @@ enum class Theme : bool {
     DARK = true,  ///< Dark mode
     LIGHT = false ///< Light mode
 };
+
+/**
+ * @class MockController
+ * @brief A MockController class declaration so it can be used as a member.
+ */
+class MockController;
 
 /**
  * @class ControllerWidget
@@ -229,11 +235,6 @@ private:
     QComboBox *airflowCombo, *tempUnitCombo, *pressureUnitCombo;
 
     /**
-     * @brief Spin boxes for humidity and pressure (used in simulation dialog).
-     */
-    QSpinBox *humiditySpin, *pressureSpin;
-
-    /**
      * @brief Text items labeling each block in the graphics scene.
      */
     QGraphicsTextItem *block1Label, *block2Label, *block3Label;
@@ -251,22 +252,22 @@ private:
     /**
      * @brief Current actual temperature in Celsius.
      */
-    double currentTempC = 22.0;
+    double currentTempC = 0.0f;
 
     /**
      * @brief Current atmospheric pressure in Pascals.
      */
-    double currentPressurePa = 100.0;
+    double currentPressurePa = 0.0f;
 
     /**
      * @brief Current relative humidity percentage.
      */
-    double currentHumidity = 50;
+    double currentHumidity = 0.0f;
 
     /**
      * @brief Desired temperature set by the user in Celsius.
      */
-    double currentDesiredTempC = 22.0;
+    double currentDesiredTempC = 0.0f;
 
     /**
      * @brief Currently selected airflow direction.
@@ -282,6 +283,11 @@ private:
      * @brief Selected unit for pressure display ("Pa" or "mmHg").
      */
     QString currentPressureUnit = "Pa";
+
+    /**
+     * @brief A mock controller for random imitation
+     */
+    MockController* controller = nullptr;
 
     /**
      * @brief Updates all display labels to reflect the current state.

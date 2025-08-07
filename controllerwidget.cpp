@@ -1,17 +1,15 @@
 #include "controllerwidget.h"
+#include "mockcontroller.h"
 
 ControllerWidget::ControllerWidget(QWidget *parent) : QWidget(parent) {
 
-    // --- Настройка размеров окна ---
-    setMinimumSize(800, 600);  // Минимальный размер
-    setMaximumSize(1024, 768); // Максимальный размер
+    setMinimumSize(800, 600);
+    setMaximumSize(1024, 768);
 
-    // Фиксируем соотношение сторон (опционально)
     QSizePolicy sizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     sizePolicy.setHeightForWidth(true);
     setSizePolicy(sizePolicy);
 
-    // Graphics Scene for System Status
     scene = new QGraphicsScene(this);
     QGraphicsView *view = new QGraphicsView(scene);
     view->setFixedSize(600, 200);
@@ -33,7 +31,6 @@ ControllerWidget::ControllerWidget(QWidget *parent) : QWidget(parent) {
     block3Label = scene->addText("Блок 3");
     block3Label->setPos(450, 60);
 
-    // Controls
     powerButton = new QPushButton("Включить", this);
     powerButton->setCheckable(true);
     powerButton->setStyleSheet("QPushButton { min-width: 100px; min-height: 50px; }");
@@ -51,27 +48,18 @@ ControllerWidget::ControllerWidget(QWidget *parent) : QWidget(parent) {
     pressureUnitCombo = new QComboBox(this);
     pressureUnitCombo->addItems({"Па", "мм.рт.ст"});
 
-    // Labels
-    tempLabel = new QLabel("Температура: 22.0 °C", this);
-    humidityLabel = new QLabel("Влажность: 50 %", this);
-    pressureLabel = new QLabel("Давление: 101325 Па", this);
+    tempLabel = new QLabel("Температура: 0.0 °C", this);
+    humidityLabel = new QLabel("Влажность: 0 %", this);
+    pressureLabel = new QLabel("Давление: 0 Па", this);
     airflowLabel = new QLabel("Направление воздуха: Авто", this);
 
-    // Buttons
     themeButton = new QPushButton("Сменить тему", this);
     simulateButton = new QPushButton("Имитация данных", this);
 
-    // Layout
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
     QHBoxLayout *topLayout = new QHBoxLayout();
     QHBoxLayout *controlLayout = new QHBoxLayout();
     QVBoxLayout *statusLayout = new QVBoxLayout();
-
-    // topLayout->addWidget(view);
-    // statusLayout->addWidget(tempLabel);
-    // statusLayout->addWidget(humidityLabel);
-    // statusLayout->addWidget(pressureLabel);
-    // topLayout->addLayout(statusLayout);
 
     topLayout->addWidget(view);
     topLayout->addWidget(powerButton);
@@ -101,7 +89,6 @@ ControllerWidget::ControllerWidget(QWidget *parent) : QWidget(parent) {
     mainLayout->addWidget(themeButton);
     mainLayout->addWidget(simulateButton);
 
-    // Connections
     connect(powerButton, &QPushButton::clicked, this, &ControllerWidget::toggleSystem);
     connect(tempSlider, &QSlider::valueChanged, this, &ControllerWidget::updateTemperatureRequest);
     connect(airflowCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ControllerWidget::updateAirflowDirectionRequest);
@@ -135,20 +122,34 @@ ControllerWidget::ControllerWidget(QWidget *parent) : QWidget(parent) {
     pressureUnitCombo->setFont(font);
     themeButton->setFont(font);
     simulateButton->setFont(font);
+    tempSlider->setSliderPosition(0);
 
-    // Load settings
     loadSettings();
+    updateDisplay();
+
+
+    tempSlider->setDisabled(true);
+    airflowCombo->setDisabled(true);
+    simulateButton->setDisabled(true);
 }
 
 void ControllerWidget::toggleSystem() {
     isSystemOn = !isSystemOn;
     if(isSystemOn)
     {
+        tempSlider->setDisabled(false);
+        airflowCombo->setDisabled(false);
+        simulateButton->setDisabled(false);
+
         powerButton->setText("Выключить");
         emit(turnOnRequest());
     }
     else
     {
+        tempSlider->setDisabled(true);
+        airflowCombo->setDisabled(true);
+        simulateButton->setDisabled(true);
+
         powerButton->setText("Включить");
         emit(turnOffRequest());
     }
@@ -206,7 +207,6 @@ void ControllerWidget::updateDisplay() {
     QString tempText = QString("Температура: %1 %2").arg(temp).arg(currentTempUnit);
     tempLabel->setText(tempText);
 
-    // Давление (имитация)
     double pressure = convertPressure(currentPressurePa, currentPressureUnit);
     pressureLabel->setText(QString("Давление: %1 %2").arg(pressure).arg(currentPressureUnit));
     humidityLabel->setText(QString("Влажность: %1 %").arg(currentHumidity));
@@ -250,7 +250,6 @@ void ControllerWidget::showSimulationDialog() {
 
     QFormLayout *form = new QFormLayout(&dialog);
 
-    // --- Environment Controls ---
     QSpinBox *tempSpin = new QSpinBox(&dialog);
     tempSpin->setRange(-50, 50);
     tempSpin->setValue(static_cast<int>(currentTempC));
@@ -271,7 +270,6 @@ void ControllerWidget::showSimulationDialog() {
     airflowSimCombo->setCurrentIndex(static_cast<int>(currentAirflowSetting));
     form->addRow("Направление воздуха:", airflowSimCombo);
 
-    // --- Block Controls ---
     QStringList blockStates = {"Выключен", "Ошибка", "Включен"};
 
     QComboBox *block1Combo = new QComboBox(&dialog);
@@ -286,7 +284,13 @@ void ControllerWidget::showSimulationDialog() {
     block3Combo->addItems(blockStates);
     form->addRow("Блок 3:", block3Combo);
 
-    // --- Buttons ---
+    QCheckBox *randomImitationBox = new QCheckBox(&dialog);
+    form->addRow("Рандомная имитация:", randomImitationBox);
+
+    if(controller == nullptr)
+        randomImitationBox->setCheckState(Qt::CheckState::Unchecked);
+    else randomImitationBox->setCheckState(Qt::CheckState::Checked);
+
     QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
     form->addRow(buttons);
 
@@ -294,7 +298,17 @@ void ControllerWidget::showSimulationDialog() {
     connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
 
     if (dialog.exec() == QDialog::Accepted) {
-        // Use slots to apply values
+        if(randomImitationBox->isChecked()) {
+            if(controller == nullptr) {
+                controller = new MockController(this);
+                controller->onTurnOn();
+            }
+        }
+        else if(controller != nullptr) {
+            controller->deleteLater();
+            controller = nullptr;
+        }
+
         updateTemperature(tempSpin->value());
         updateHumidity(humiditySpin->value());
         updatePressure(pressureSpin->value());

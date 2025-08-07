@@ -4,7 +4,7 @@
 MockController::MockController(ControllerWidget* widget, QObject* parent)
     : QObject(parent), widget(widget)
 {
-    std::srand(std::time(nullptr)); // seed random
+    std::srand(std::time(nullptr));
 
     connect(widget, &ControllerWidget::turnOnRequest, this, &MockController::onTurnOn);
     connect(widget, &ControllerWidget::turnOffRequest, this, &MockController::onTurnOff);
@@ -12,7 +12,7 @@ MockController::MockController(ControllerWidget* widget, QObject* parent)
     connect(widget, &ControllerWidget::desiredAirFlowChanged, this, &MockController::onAirFlowChanged);
 
     connect(&simulationTimer, &QTimer::timeout, this, &MockController::simulateStep);
-    simulationTimer.setInterval(2000); // every 2 seconds
+    simulationTimer.setInterval(2000);
 }
 
 void MockController::onTurnOn() {
@@ -38,13 +38,12 @@ void MockController::onTemperatureChanged(int value) {
 }
 
 void MockController::onAirFlowChanged(AirFlowDirection dir) {
-    widget->updateAirflowDirection(dir); // Echo the new direction back into the widget
+    widget->updateAirflowDirection(dir);
 }
 
 void MockController::simulateStep() {
     if (!running) return;
 
-    // Slight fluctuation around the desired temperature
     double actualTemp = currentTemperature + ((std::rand() % 5 - 2) * 0.5);
     double humidity = 40.0 + (std::rand() % 20);
     double pressure = 100000 + (std::rand() % 5000);
@@ -53,11 +52,23 @@ void MockController::simulateStep() {
     widget->updateHumidity(humidity);
     widget->updatePressure(pressure);
 
-    // Simulate occasional block error
-    int random = std::rand() % 10;
-    if (random == 0) {
+    int random1 = std::rand() % 10;
+    int random2 = std::rand() % 10;
+    int random3 = std::rand() % 10;
+
+    if (random1 == 0) {
+        widget->setBlock1Status(BlockStatus::BLOCK_ERROR);
+    } else {
+        widget->setBlock1Status(BlockStatus::BLOCK_ON);
+    }
+    if (random2 == 0) {
         widget->setBlock2Status(BlockStatus::BLOCK_ERROR);
     } else {
         widget->setBlock2Status(BlockStatus::BLOCK_ON);
+    }
+    if (random3 == 0) {
+        widget->setBlock3Status(BlockStatus::BLOCK_ERROR);
+    } else {
+        widget->setBlock3Status(BlockStatus::BLOCK_ON);
     }
 }

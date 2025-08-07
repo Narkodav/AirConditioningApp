@@ -27,7 +27,7 @@ public:
      */
     explicit MockController(ControllerWidget* widget, QObject* parent = nullptr);
 
-private slots:
+public slots:
     /**
      * @brief Handles system start request.
      */
@@ -37,6 +37,8 @@ private slots:
      * @brief Handles system stop request.
      */
     void onTurnOff();
+
+private slots:
 
     /**
      * @brief Handles desired temperature change.

@@ -1,5 +1,5 @@
 #include "controllerwidget.h"
-#include "mockcontroller.h"
+
 
 #include <QApplication>
 
@@ -9,6 +9,5 @@ int main(int argc, char *argv[])
     ControllerWidget widget;
     widget.show();
 
-    MockController controller(&widget);
     return a.exec();
 }
